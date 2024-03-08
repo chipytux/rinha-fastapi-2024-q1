@@ -1,4 +1,3 @@
-rinha-de-backend-2024-q1
 .idea
 .ipynb_checkpoints
 .mypy_cache
@@ -29,3 +28,4 @@ archive.zip
 
 # macOS
 .DS_Store
+/rinha-de-backend-2024-q1/*

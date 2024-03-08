@@ -39,11 +39,11 @@ engine: AsyncEngine = create_async_engine(
     max_overflow=int(os.environ.get("MAX_OVERFLOW")),
 )
 
+SESSION_MAKER = async_sessionmaker(engine, expire_on_commit=False)
+
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    session_maker = async_sessionmaker(engine, expire_on_commit=False)
-
-    async with session_maker.begin() as session:
+    async with SESSION_MAKER.begin() as session:
         yield session
 
 
