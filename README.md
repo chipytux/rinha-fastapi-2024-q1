@@ -8,7 +8,7 @@
 
 ### Para executar a aplicação:
 ```sh
-git clone https://github.com/chipytux/rinha-fastapi-2024-q1.git
+git clone https://github.com/chipytux/rinha-fastapi-2024-q1.git .
 docker compose up
 ```
 
