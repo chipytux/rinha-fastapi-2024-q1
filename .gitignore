@@ -28,6 +28,6 @@ archive.zip
 
 # macOS
 .DS_Store
-/rinha-de-backend-2024-q1/*
 /load-test/*
 /executar-teste-local.sh
+/rinha-de-backend-2024-q1/
