@@ -37,7 +37,7 @@ jobs:
     - run: echo ${{ env.GATLING_OUTPUT_FOLDER }}
     - run: |
         # replace string DESCRICAO with the commit sha in file index.html inside GATLING OUTPUT FOLDER
-        sed -i "s/DESCRICAO/${{ github.sha }}/g" ${{ github.workspace }}/rinha-de-backend-2024-q1/load-test/user-files/results/${{ env.GATLING_OUTPUT_FOLDER }}/index.html
+        sed -i "s/DESCRICAO/${{ github.sha }}/g" /home/runner/rinha-de-backend-2024-q1/load-test/user-files/results/${{ env.GATLING_OUTPUT_FOLDER }}/index.html
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
