@@ -24,7 +24,8 @@ jobs:
     - name: Load test
       run: |
         wget https://8006059.fs1.hubspotusercontent-na1.net/hubfs/8006059/Gatling%20OSS/gatling-charts-highcharts-bundle-3.10.4-bundle.zip
-        unzip gatling-charts-highcharts-bundle-3.10.4-bundle.zip -d gatling
+        unzip gatling-charts-highcharts-bundle-3.10.4-bundle.zip
+        mv gatling-charts-highcharts-bundle-3.10.4 gatling
         export GATLING_HOME=$(pwd)
 
         git clone --single-branch --quiet https://github.com/zanfranceschi/rinha-de-backend-2024-q1
