@@ -23,13 +23,15 @@ jobs:
     - run: docker-compose up -d
     - name: Load test
       run: |
-        git clone --single-branch --quiet https://github.com/zanfranceschi/rinha-de-backend-2023-q3
-        cd rinha-de-backend-2023-q3
-        wget https://repo1.maven.org/maven2/io/gatling/highcharts/gatling-charts-highcharts-bundle/3.9.5/gatling-charts-highcharts-bundle-3.9.5-bundle.zip
-        unzip gatling-charts-highcharts-bundle-3.9.5-bundle.zip
-        cd gatling-charts-highcharts-bundle-3.9.5
-        ./bin/gatling.sh -rm local -s RinhaBackendSimulation -rd "DESCRICAO" -rf $WORKSPACE/user-files/results -sf $WORKSPACE/user-files/simulations -rsf $WORKSPACE/user-files/resources
-        echo GATLING_OUTPUT_FOLDER=$(ls $WORKSPACE/user-files/results | sort | head -n 1) >> $GITHUB_ENV
+        wget https://8006059.fs1.hubspotusercontent-na1.net/hubfs/8006059/Gatling%20OSS/gatling-charts-highcharts-bundle-3.10.4-bundle.zip
+        unzip gatling-charts-highcharts-bundle-3.10.4-bundle.zip
+        export GATLING_HOME=$(pwd)/gatling-charts-highcharts-bundle-3.10.4-bundle.zip
+
+        git clone --single-branch --quiet https://github.com/zanfranceschi/rinha-de-backend-2024-q1
+        cd rinha-de-backend-2024-q1
+        ./executar-teste-local.sh
+        
+        echo GATLING_OUTPUT_FOLDER=$(ls $(pwd)/user-files/results | sort | head -n 1) >> $GITHUB_ENV
       env:
         WORKSPACE: ${{ github.workspace }}/rinha-de-backend-2023-q3/stress-test
     - run: echo ${{ env.GATLING_OUTPUT_FOLDER }}
