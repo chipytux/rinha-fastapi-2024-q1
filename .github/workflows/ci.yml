@@ -23,6 +23,7 @@ jobs:
     - run: docker-compose up -d
     - name: Load test
       run: |
+        pwd
         wget https://8006059.fs1.hubspotusercontent-na1.net/hubfs/8006059/Gatling%20OSS/gatling-charts-highcharts-bundle-3.10.4-bundle.zip
         unzip gatling-charts-highcharts-bundle-3.10.4-bundle.zip
         mv gatling-charts-highcharts-bundle-3.10.4 gatling
