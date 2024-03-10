@@ -16,7 +16,15 @@ from pydantic import (
     ConfigDict,
     TypeAdapter,
 )
-from sqlalchemy import String, Column, Integer, ForeignKey, func, DateTime
+from sqlalchemy import (
+    String,
+    Column,
+    Integer,
+    ForeignKey,
+    func,
+    DateTime,
+    AsyncAdaptedQueuePool,
+)
 from sqlalchemy import text, insert, select
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -37,6 +45,9 @@ engine: AsyncEngine = create_async_engine(
     os.environ.get("DATABASE_URL"),
     pool_size=int(os.environ.get("POOL_SIZE")),
     max_overflow=int(os.environ.get("MAX_OVERFLOW")),
+    echo=False,
+    echo_pool=False,
+    poolclass=AsyncAdaptedQueuePool,
 )
 
 SESSION_MAKER = async_sessionmaker(engine, expire_on_commit=False)
