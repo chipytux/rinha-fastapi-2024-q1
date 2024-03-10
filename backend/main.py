@@ -54,7 +54,7 @@ SESSION_MAKER = async_sessionmaker(engine, expire_on_commit=False)
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    async with SESSION_MAKER.begin() as session:
+    async with SESSION_MAKER() as session:
         yield session
 
 
@@ -183,6 +183,7 @@ async def create_transaction(
             customer_id=customer_id, **transaction_create.model_dump()
         )
     )
+    await session.commit()
 
     return ORJSONResponse(content={"limite": limite, "saldo": novo_saldo})
 
