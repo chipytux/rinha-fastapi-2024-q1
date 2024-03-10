@@ -141,8 +141,8 @@ async def create_transaction(
     transaction_create: TransactionCreate,
 ) -> ORJSONResponse:
     check_customer_id(customer_id)
-
-    async with SESSION_MAKER.begin() as session:
+    async with SESSION_MAKER() as session:
+        await session.begin()
         try:
             result = await session.execute(
                 text(
@@ -152,10 +152,10 @@ async def create_transaction(
             )
         except IntegrityError:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        await session.commit()
 
-    limite, saldo, now = result.one()
+        limite, saldo, now = result.one()
 
-    async with SESSION_MAKER.begin() as session:
         await session.execute(
             insert(TransactionDB).values(
                 customer_id=customer_id,
