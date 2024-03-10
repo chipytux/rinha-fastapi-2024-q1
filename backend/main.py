@@ -60,6 +60,7 @@ async def startup_event():
     async with SESSION_MAKER() as session:
         for i in range(500):
             await session.execute(text("INSERT INTO dummy DEFAULT VALUES;"))
+    sleep(2)
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
