@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from enum import Enum
+from time import sleep
 from typing import Annotated
 from typing import AsyncGenerator
 
@@ -55,6 +56,7 @@ SESSION_MAKER = async_sessionmaker(engine, expire_on_commit=False)
 
 @app.on_event("startup")
 async def startup_event():
+    sleep(2)
     async with SESSION_MAKER() as session:
         for i in range(500):
             await session.execute(text("INSERT INTO dummy DEFAULT VALUES;"))
