@@ -1,5 +1,0 @@
-name: rinha
-channels:
-  - defaults
-dependencies:
-  - python=3.12
