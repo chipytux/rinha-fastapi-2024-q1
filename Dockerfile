@@ -6,7 +6,7 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry export --without dev -f requirements.txt --output requirements.txt
 
 
-FROM python:3.12-slim as final
+FROM python:3.12-alpine as final
 WORKDIR /app/
 
 COPY --from=poetry_export /tmp/requirements.txt requirements.txt
