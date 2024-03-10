@@ -158,31 +158,24 @@ async def create_transaction(
 ) -> ORJSONResponse:
     check_customer_id(customer_id)
 
-    result = await session.execute(
-        text(f"SELECT limite, saldo FROM customer WHERE id = {customer_id} FOR UPDATE")
-    )
-
-    limite, saldo = result.one()
+    customer = await session.get(CustomerDB, customer_id, with_for_update=True)
 
     if (
         transaction_create.tipo == TransactionType.DEBIT
-        and transaction_create.valor > limite + saldo
+        and transaction_create.valor > customer.limite + customer.saldo
     ):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-    novo_saldo = saldo + transaction_create.credit
+    customer.saldo = customer.saldo + transaction_create.credit
 
-    await session.execute(
-        text(f"UPDATE customer SET saldo = {novo_saldo} WHERE id = {customer_id}")
+    transaction = TransactionDB(
+        customer_id=customer_id, **transaction_create.model_dump()
     )
 
-    await session.execute(
-        insert(TransactionDB).values(
-            customer_id=customer_id, **transaction_create.model_dump()
-        )
-    )
+    session.add(transaction)
+    await session.commit()
 
-    return ORJSONResponse(content={"limite": limite, "saldo": novo_saldo})
+    return ORJSONResponse(content={"limite": customer.limite, "saldo": customer.saldo})
 
 
 @app.get("/clientes/{customer_id}/extrato")
