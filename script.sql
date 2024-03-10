@@ -3,8 +3,7 @@ UNLOGGED TABLE customer
 (
     id SERIAL PRIMARY KEY,
     limite BIGINT NOT NULL,
-    saldo  BIGINT NOT NULL,
-    CONSTRAINT ck_limite CHECK (saldo >= -limite)
+    saldo  BIGINT NOT NULL
 );
 
 CREATE

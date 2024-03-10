@@ -2,7 +2,6 @@ import os
 from datetime import datetime
 from enum import Enum
 from typing import Annotated
-from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi import HTTPException
@@ -18,13 +17,11 @@ from pydantic import (
 )
 from sqlalchemy import String, Column, Integer, ForeignKey, func, DateTime
 from sqlalchemy import text, insert, select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import contains_eager
 from sqlalchemy.orm import relationship
@@ -38,6 +35,7 @@ engine: AsyncEngine = create_async_engine(
     os.environ.get("DATABASE_URL"),
     pool_size=int(os.environ.get("POOL_SIZE")),
     max_overflow=int(os.environ.get("MAX_OVERFLOW")),
+    echo=True,
 )
 
 SESSION_MAKER = async_sessionmaker(engine, expire_on_commit=False)
@@ -141,20 +139,28 @@ async def create_transaction(
     transaction_create: TransactionCreate,
 ) -> ORJSONResponse:
     check_customer_id(customer_id)
+
+    debit_condition = (
+        f" and -limite <= saldo + {transaction_create.credit} "
+        if transaction_create.tipo == TransactionType.DEBIT
+        else ""
+    )
+
     async with SESSION_MAKER() as session:
-        await session.begin()
-        try:
-            result = await session.execute(
-                text(
-                    f"UPDATE customer SET saldo = saldo + {transaction_create.credit} "
-                    "WHERE customer.id = 1 RETURNING limite, saldo, now()"
-                )
+        result = await session.execute(
+            text(
+                f"UPDATE customer SET saldo = saldo + {transaction_create.credit} "
+                f"WHERE customer.id = {customer_id} {debit_condition} "
+                "RETURNING limite, saldo, now()"
             )
-        except IntegrityError:
+        )
+
+        response = result.one_or_none()
+        if response is None:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
         await session.commit()
 
-        limite, saldo, now = result.one()
+        limite, saldo, now = response
 
         await session.execute(
             insert(TransactionDB).values(
@@ -163,6 +169,7 @@ async def create_transaction(
                 **transaction_create.model_dump(),
             )
         )
+        await session.commit()
 
     return ORJSONResponse(content={"limite": limite, "saldo": saldo})
 
