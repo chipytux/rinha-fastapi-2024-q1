@@ -3,8 +3,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Annotated
 
-from fastapi import Depends, HTTPException
 from fastapi import FastAPI
+from fastapi import HTTPException, BackgroundTasks
 from fastapi import status
 from fastapi.responses import ORJSONResponse
 from pydantic import (
@@ -30,7 +30,6 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import contains_eager
 from sqlalchemy.orm import relationship
@@ -44,7 +43,7 @@ engine: AsyncEngine = create_async_engine(
     os.environ.get("DATABASE_URL"),
     pool_size=int(os.environ.get("POOL_SIZE")),
     max_overflow=int(os.environ.get("MAX_OVERFLOW")),
-    echo=False,
+    echo=True,
     echo_pool=False,
     poolclass=AsyncAdaptedQueuePool,
 )
@@ -148,10 +147,11 @@ def check_customer_id(customer_id: int) -> None:
 async def create_transaction(
     customer_id: int,
     transaction_create: TransactionCreate,
+    background_tasks: BackgroundTasks,
 ) -> ORJSONResponse:
     check_customer_id(customer_id)
 
-    async with SESSION_MAKER() as session:
+    async with SESSION_MAKER.begin() as session:
         result = await session.execute(
             text(
                 f"SELECT limite, saldo, now() FROM customer WHERE id = {customer_id} FOR UPDATE"
@@ -171,8 +171,16 @@ async def create_transaction(
         await session.execute(
             text(f"UPDATE customer SET saldo = {novo_saldo} WHERE id = {customer_id}")
         )
-        await session.commit()
 
+        background_tasks.add_task(
+            insert_transaction, customer_id, now, transaction_create
+        )
+
+    return ORJSONResponse(content={"limite": limite, "saldo": novo_saldo})
+
+
+async def insert_transaction(customer_id, now, transaction_create):
+    async with SESSION_MAKER.begin() as session:
         await session.execute(
             insert(TransactionDB).values(
                 customer_id=customer_id,
@@ -180,9 +188,6 @@ async def create_transaction(
                 **transaction_create.model_dump(),
             )
         )
-        await session.commit()
-
-    return ORJSONResponse(content={"limite": limite, "saldo": novo_saldo})
 
 
 @app.get("/clientes/{customer_id}/extrato")
