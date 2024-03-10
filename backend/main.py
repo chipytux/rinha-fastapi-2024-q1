@@ -2,7 +2,6 @@ import os
 from datetime import datetime
 from enum import Enum
 from typing import Annotated
-from typing import AsyncGenerator
 
 from fastapi import Depends, HTTPException
 from fastapi import FastAPI
@@ -51,11 +50,6 @@ engine: AsyncEngine = create_async_engine(
 )
 
 SESSION_MAKER = async_sessionmaker(engine, expire_on_commit=False)
-
-
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    async with SESSION_MAKER.begin() as session:
-        yield session
 
 
 # MODELS
@@ -154,53 +148,56 @@ def check_customer_id(customer_id: int) -> None:
 async def create_transaction(
     customer_id: int,
     transaction_create: TransactionCreate,
-    session: AsyncSession = Depends(get_session),
 ) -> ORJSONResponse:
     check_customer_id(customer_id)
 
-    result = await session.execute(
-        text(f"SELECT limite, saldo FROM customer WHERE id = {customer_id} FOR UPDATE")
-    )
-
-    limite, saldo = result.one()
-
-    if (
-        transaction_create.tipo == TransactionType.DEBIT
-        and transaction_create.valor > limite + saldo
-    ):
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
-
-    novo_saldo = saldo + transaction_create.credit
-
-    await session.execute(
-        text(f"UPDATE customer SET saldo = {novo_saldo} WHERE id = {customer_id}")
-    )
-
-    await session.execute(
-        insert(TransactionDB).values(
-            customer_id=customer_id, **transaction_create.model_dump()
+    async with SESSION_MAKER() as session:
+        result = await session.execute(
+            text(
+                f"SELECT limite, saldo, now() FROM customer WHERE id = {customer_id} FOR UPDATE"
+            )
         )
-    )
+
+        limite, saldo, now = result.one()
+
+        if (
+            transaction_create.tipo == TransactionType.DEBIT
+            and transaction_create.valor > limite + saldo
+        ):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+        novo_saldo = saldo + transaction_create.credit
+
+        await session.execute(
+            text(f"UPDATE customer SET saldo = {novo_saldo} WHERE id = {customer_id}")
+        )
+        await session.commit()
+
+        await session.execute(
+            insert(TransactionDB).values(
+                customer_id=customer_id,
+                realizada_em=now.replace(tzinfo=None),
+                **transaction_create.model_dump(),
+            )
+        )
+        await session.commit()
 
     return ORJSONResponse(content={"limite": limite, "saldo": novo_saldo})
 
 
 @app.get("/clientes/{customer_id}/extrato")
-async def get_customer_statement(
-    customer_id: int, session: AsyncSession = Depends(get_session)
-) -> CustomerStatementResponse:
+async def get_customer_statement(customer_id: int) -> CustomerStatementResponse:
     check_customer_id(customer_id)
 
-    query = (
-        select(CustomerDB)
-        .join(TransactionDB, isouter=True)
-        .options(contains_eager(CustomerDB.transactions))
-        .where(CustomerDB.id == customer_id)
-        .order_by(TransactionDB.id.desc())
-        .limit(10)
-    )
-
-    result = await session.execute(query)
+    async with SESSION_MAKER() as session:
+        result = await session.execute(
+            select(CustomerDB)
+            .join(TransactionDB, isouter=True)
+            .options(contains_eager(CustomerDB.transactions))
+            .where(CustomerDB.id == customer_id)
+            .order_by(TransactionDB.realizada_em.desc())
+            .limit(10)
+        )
 
     customer = result.unique().scalars().one()
 

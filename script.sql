@@ -12,11 +12,12 @@ CREATE UNLOGGED TABLE transaction
     valor        BIGINT     NOT NULL,
     tipo         CHAR(1)     NOT NULL,
     descricao    VARCHAR(10) NOT NULL,
-    realizada_em TIMESTAMP   NOT NULL DEFAULT NOW(),
+    realizada_em TIMESTAMP   NOT NULL,
     CONSTRAINT fk_customer_id
         FOREIGN KEY (customer_id) REFERENCES customer (id)
 );
 
+CREATE INDEX idx_transaction_customer_id_realizada_em ON transaction (customer_id, realizada_em DESC);
 
 BEGIN;
 
