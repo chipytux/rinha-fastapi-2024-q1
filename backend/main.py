@@ -53,6 +53,13 @@ engine: AsyncEngine = create_async_engine(
 SESSION_MAKER = async_sessionmaker(engine, expire_on_commit=False)
 
 
+@app.on_event("startup")
+async def startup_event():
+    async with SESSION_MAKER() as session:
+        for i in range(500):
+            await session.execute(text("INSERT INTO dummy DEFAULT VALUES;"))
+
+
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with SESSION_MAKER.begin() as session:
         yield session
