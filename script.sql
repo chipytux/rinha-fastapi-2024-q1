@@ -17,6 +17,7 @@ CREATE UNLOGGED TABLE transaction
         FOREIGN KEY (customer_id) REFERENCES customer (id)
 );
 
+CREATE INDEX idx_cliente_id_data ON transaction (customer_id, id DESC);
 
 BEGIN;
 
