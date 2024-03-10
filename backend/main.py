@@ -56,11 +56,9 @@ SESSION_MAKER = async_sessionmaker(engine, expire_on_commit=False)
 
 @app.on_event("startup")
 async def startup_event():
-    sleep(2)
+    sleep(1)
     async with SESSION_MAKER() as session:
-        for i in range(500):
-            await session.execute(text("INSERT INTO dummy DEFAULT VALUES;"))
-    sleep(2)
+        await session.execute(text("SELECT * FROM customer"))
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
