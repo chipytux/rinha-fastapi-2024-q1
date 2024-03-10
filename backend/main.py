@@ -1,6 +1,8 @@
+import logging
 import os
 from datetime import datetime
 from enum import Enum
+from time import sleep
 from typing import Annotated
 from typing import AsyncGenerator
 
@@ -51,6 +53,20 @@ engine: AsyncEngine = create_async_engine(
 )
 
 SESSION_MAKER = async_sessionmaker(engine, expire_on_commit=False)
+
+
+@app.on_event("startup")
+async def startup_event():
+    async with SESSION_MAKER() as session:
+        for i in range(10):
+            try:
+                await session.execute(text("SELECT 1"))
+            except ConnectionRefusedError as cer:
+                logging.error(cer)
+                sleep(1)
+                continue
+            else:
+                break
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
