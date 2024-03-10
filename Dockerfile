@@ -21,3 +21,5 @@ ENV PYTHONUNBUFFERED=1 \
 COPY backend /app/backend
 
 RUN pip install -r requirements.txt --no-cache-dir && rm requirements.txt
+
+CMD gunicorn backend.main:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT} --log-level error

@@ -7,11 +7,11 @@ services:
       context: .
       dockerfile: ./Dockerfile
     network_mode: host
-    entrypoint: 'uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1 --log-level error'
     environment:
       DATABASE_URL: "postgresql+asyncpg://root:1234@localhost:5432/rinha"
       POOL_SIZE: 40
       MAX_OVERFLOW: 20
+      PORT: 8000
     depends_on:
       - db
     deploy:
@@ -22,7 +22,11 @@ services:
 
   fastapi02:
     <<: *app01
-    entrypoint: 'uvicorn backend.main:app --host 0.0.0.0 --port 8001 --workers 1 --log-level error'
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://root:1234@localhost:5432/rinha"
+      POOL_SIZE: 40
+      MAX_OVERFLOW: 20
+      PORT: 8001
 
   nginx:
     image: nginx:1.25-alpine
