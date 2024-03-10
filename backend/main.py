@@ -56,7 +56,7 @@ SESSION_MAKER = async_sessionmaker(engine, expire_on_commit=False)
 
 @app.on_event("startup")
 async def startup_event():
-    sleep(1)
+    sleep(2)
     async with SESSION_MAKER() as session:
         await session.execute(text("SELECT * FROM customer"))
 
