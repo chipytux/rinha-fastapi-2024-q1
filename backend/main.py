@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime
 from enum import Enum
@@ -56,9 +57,16 @@ SESSION_MAKER = async_sessionmaker(engine, expire_on_commit=False)
 
 @app.on_event("startup")
 async def startup_event():
-    sleep(2)
     async with SESSION_MAKER() as session:
-        await session.execute(text("SELECT * FROM customer"))
+        for i in range(10):
+            try:
+                await session.execute(text("SELECT 1"))
+            except ConnectionRefusedError as cer:
+                logging.error(cer)
+                sleep(1)
+                continue
+            else:
+                break
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
