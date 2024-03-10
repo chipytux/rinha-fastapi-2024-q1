@@ -141,7 +141,7 @@ async def create_transaction(
     check_customer_id(customer_id)
 
     debit_condition = (
-        f" and -limite <= saldo + {transaction_create.credit} "
+        f" and -customer.limite <= customer.saldo + {transaction_create.credit} "
         if transaction_create.tipo == TransactionType.DEBIT
         else ""
     )
