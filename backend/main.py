@@ -1,6 +1,8 @@
+import logging
 import os
 from datetime import datetime
 from enum import Enum
+from time import sleep
 from typing import Annotated
 from typing import AsyncGenerator
 
@@ -51,6 +53,20 @@ engine: AsyncEngine = create_async_engine(
 )
 
 SESSION_MAKER = async_sessionmaker(engine, expire_on_commit=False)
+
+
+@app.on_event("startup")
+async def startup_event():
+    async with SESSION_MAKER() as session:
+        for i in range(10):
+            try:
+                await session.execute(text("SELECT 1"))
+            except ConnectionRefusedError as cer:
+                logging.error(cer)
+                sleep(1)
+                continue
+            else:
+                break
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
@@ -158,31 +174,24 @@ async def create_transaction(
 ) -> ORJSONResponse:
     check_customer_id(customer_id)
 
-    result = await session.execute(
-        text(f"SELECT limite, saldo FROM customer WHERE id = {customer_id} FOR UPDATE")
-    )
-
-    limite, saldo = result.one()
+    customer = await session.get(CustomerDB, customer_id, with_for_update=True)
 
     if (
         transaction_create.tipo == TransactionType.DEBIT
-        and transaction_create.valor > limite + saldo
+        and transaction_create.valor > customer.limite + customer.saldo
     ):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-    novo_saldo = saldo + transaction_create.credit
+    customer.saldo = customer.saldo + transaction_create.credit
 
-    await session.execute(
-        text(f"UPDATE customer SET saldo = {novo_saldo} WHERE id = {customer_id}")
+    transaction = TransactionDB(
+        customer_id=customer_id, **transaction_create.model_dump()
     )
 
-    await session.execute(
-        insert(TransactionDB).values(
-            customer_id=customer_id, **transaction_create.model_dump()
-        )
-    )
+    session.add(transaction)
+    await session.commit()
 
-    return ORJSONResponse(content={"limite": limite, "saldo": novo_saldo})
+    return ORJSONResponse(content={"limite": customer.limite, "saldo": customer.saldo})
 
 
 @app.get("/clientes/{customer_id}/extrato")
