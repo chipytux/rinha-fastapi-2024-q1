@@ -10,7 +10,7 @@ services:
     entrypoint: 'uvicorn backend.main:app --host 0.0.0.0 --port 8000 --workers 1 --log-level error'
     environment:
       DATABASE_URL: "postgresql+asyncpg://root:1234@localhost:5432/rinha"
-      POOL_SIZE: 40
+      POOL_SIZE: 60
       MAX_OVERFLOW: 20
     depends_on:
       - db
