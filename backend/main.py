@@ -176,6 +176,8 @@ async def create_transaction(
         text(f"UPDATE customer SET saldo = {novo_saldo} WHERE id = {customer_id}")
     )
 
+    await session.commit()
+
     await session.execute(
         insert(TransactionDB).values(
             customer_id=customer_id, **transaction_create.model_dump()
