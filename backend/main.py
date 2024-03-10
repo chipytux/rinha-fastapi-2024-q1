@@ -43,7 +43,7 @@ engine: AsyncEngine = create_async_engine(
     os.environ.get("DATABASE_URL"),
     pool_size=int(os.environ.get("POOL_SIZE")),
     max_overflow=int(os.environ.get("MAX_OVERFLOW")),
-    echo=True,
+    echo=False,
     echo_pool=False,
     poolclass=AsyncAdaptedQueuePool,
 )
