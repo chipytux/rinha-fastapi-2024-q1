@@ -22,5 +22,5 @@ https://www.linkedin.com/in/dino-aguilar-929719139/
 
 
 ### Agradecimentos:
-@alexsanderam -> Otimização e debugging
-@lmtani -> Mentoria
+- @alexsanderam -> Otimização e debugging
+- @lmtani -> Mentoria
